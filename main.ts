@@ -1,57 +1,48 @@
 import { App, MarkdownPostProcessor, MarkdownPostProcessorContext, MarkdownPreviewRenderer, MarkdownRenderer, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
-import * as Chartist from 'chartist';
 import * as Yaml from 'yaml';
 
-export default class PlotPlugin extends Plugin {
+export default class QueryLinesPlugin extends Plugin {
 
 	static postprocessor: MarkdownPostProcessor = (el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
-		// Assumption: One section always contains only the code block
 
-		//Which Block should be replaced? -> Codeblocks
-		const blockToReplace = el.querySelector('pre')
-		if (!blockToReplace) return
+		// Is this a code block?
+		const codeBlock = el.querySelector('pre')
+		if (!codeBlock) return
 
-		//Only Codeblocks with the Language "chart" should be replaced
-		const plotBlock = blockToReplace.querySelector('code.language-chart')
-		if (!plotBlock) return
+		// Is this a querylines code block?
+		const queryLinesBlock = codeBlock.querySelector('code.language-querylines')
+		if (!queryLinesBlock) return
+		console.log("Found query lines block")
 
 		// Parse the Yaml content of the codeblock, if the labels or series is missing return too
-		const yaml = Yaml.parse(plotBlock.textContent)
-		if (!yaml || !yaml.labels || !yaml.series) return
+		const yaml = Yaml.parse(queryLinesBlock.textContent)
+		if (!yaml) {
+            console.log("Couldn't parse yaml")
+            console.log(queryLinesBlock.textContent)
+            return
+        } 
+		if (!yaml.query) {
+            console.log("Couldn't find query")
+            return
+        } 
 		console.log(yaml)
 
 		//create the new element
-		const destination = document.createElement('div')
+		const output = document.createElement('div')
+        const hello = document.createTextNode("Query: " + yaml.query)
+        output.appendChild(hello)
 
-		if (yaml.type === 'line') new Chartist.Line(destination, {
-			labels: yaml.labels,
-			series: yaml.series
-		}, {
-			lineSmooth: Chartist.Interpolation.cardinal({
-				fillHoles: yaml.fillGaps ?? false,
-			  }),
-			  low: yaml.low ?? null,
-			  showArea: yaml.showArea ?? false
-		});
-		else if (yaml.type === 'bar') new Chartist.Bar(destination, {
-			labels: yaml.labels,
-			series: yaml.series
-		}, {		
-			  low: yaml.low ?? null,
-		});
-		else return
-
-		el.replaceChild(destination, blockToReplace)
+		el.replaceChild(output, codeBlock)
 	}
 
 	onload() {
-		console.log('loading plugin: chartist');
-		MarkdownPreviewRenderer.registerPostProcessor(PlotPlugin.postprocessor)
+		console.log('loading plugin: query-lines');
+		MarkdownPreviewRenderer.registerPostProcessor(QueryLinesPlugin.postprocessor)
 	}
 
 	onunload() {
-		console.log('unloading plugin: chartist');
-		MarkdownPreviewRenderer.unregisterPostProcessor(PlotPlugin.postprocessor)
+		console.log('unloading plugin: query-lines');
+		MarkdownPreviewRenderer.unregisterPostProcessor(QueryLinesPlugin.postprocessor)
 	}
 
 }
