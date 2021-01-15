@@ -1,7 +1,23 @@
-import { App, MarkdownPostProcessor, MarkdownPostProcessorContext, MarkdownPreviewRenderer, MarkdownRenderer, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { 
+    App, 
+    MarkdownPostProcessor, 
+    MarkdownPostProcessorContext, 
+    MarkdownPreviewRenderer, 
+    Plugin, 
+    PluginManifest
+    } from 'obsidian';
 import * as Yaml from 'yaml';
 
 export default class QueryLinesPlugin extends Plugin {
+
+    constructor(app: App, plugin: PluginManifest) {
+        super(app, plugin);
+        this.app = app
+        QueryLinesPlugin.instance = this
+    }
+
+    /* Static reference to app so that the markdown processor can see it */
+    static instance: QueryLinesPlugin
 
 	static postprocessor: MarkdownPostProcessor = (el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
 
@@ -14,18 +30,24 @@ export default class QueryLinesPlugin extends Plugin {
 		if (!queryLinesBlock) return
 		console.log("Found query lines block")
 
-		// Parse the Yaml content of the codeblock, if the labels or series is missing return too
+		// Parse code block content
 		const yaml = Yaml.parse(queryLinesBlock.textContent)
 		if (!yaml) {
             console.log("Couldn't parse yaml")
             console.log(queryLinesBlock.textContent)
             return
         } 
+
+        // Abort if query not found
 		if (!yaml.query) {
             console.log("Couldn't find query")
             return
         } 
 		console.log(yaml)
+        console.log(QueryLinesPlugin.instance)
+
+
+
 
 		//create the new element
 		const output = document.createElement('div')
